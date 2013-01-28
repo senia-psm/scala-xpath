@@ -33,7 +33,42 @@ object XPathExamples {
     """author[first-name][3]""", // Третий элемент <author>, имеющий дочерний элемент <first-name>.
     """my:book""", // Элемент <book> из пространства имен my.
     """my:*""", // Все элементы из пространства имен my.
-    """@my:*""" // Все атрибуты из пространства имен my (сюда не входят неквалифицированные атрибуты, принадлежащие элементам из пространства имен my).
+    """@my:*""", // Все атрибуты из пространства имен my (сюда не входят неквалифицированные атрибуты, принадлежащие элементам из пространства имен my).
+
+    """x/y[1]""", // The first <y> child of each <x>. This is equivalent to the expression in the next row.
+    """x/y[position() = 1]""", // The first <y> child of each <x>.
+//    """(x/y)[1]""", // The first <y> from the entire set of <y> children of <x> elements.
+    """x[1]/y[2]""", // The second <y> child of the first <x>.  )
+
+    """book[last()]""", // The last <book> element of the current context node.
+    """book/author[last()]""", // The last <author> child of each <book> element of the current context node.
+//    """(book/author)[last()]""", // The last <author> element from the entire set of <author> children of <book> elements of the current context node.
+    """book[excerpt]""", // All <book> elements that contain at least one <excerpt> element child.
+    """book[excerpt]/title""", // All <title> elements that are children of <book> elements that also contain at least one <excerpt> element child.
+    """book[excerpt]/author[degree]""", // All <author> elements that contain at least one <degree> element child, and that are children of <book> elements that also contain at least one <excerpt> element.
+    """book[author/degree]""", // All <book> elements that contain <author> children that in turn contain at least one <degree> child.
+    """author[degree][award]""", // All <author> elements that contain at least one <degree> element child and at least one <award> element child.
+    """author[degree and award]""", // All <author> elements that contain at least one <degree> element child and at least one <award> element child.
+    """author[(degree or award) and publication]""", // All <author> elements that contain at least one <degree> or <award> and at least one <publication> as the children
+    """author[degree and not(publication)]""", // All <author> elements that contain at least one <degree> element child and that contain no <publication> element children.
+    """author[not(degree or award) and publication]""", // All <author> elements that contain at least one <publication> element child and contain neither <degree> nor <award> element children.
+    """author[last-name = "Bob"]""", // All <author> elements that contain at least one <last-name> element child with the value Bob.
+    """author[last-name[1] = "Bob"]""", // All <author> elements where the first <last-name> child element has the value Bob. Note that this is equivalent to the expression in the next row.
+    """author[last-name [position()=1]= "Bob"]""", // All <author> elements where the first <last-name> child element has the value Bob.
+    """degree[@from != "Harvard"]""", // All <degree> elements where the from attribute is not equal to "Harvard".
+    """author[. = "Matthew Bob"]""", // All <author> elements whose value is Matthew Bob.
+    """author[last-name = "Bob" and ../price > 50]""", // All <author> elements that contain a <last-name> child element whose value is Bob, and a <price> sibling element whose value is greater than 50.
+    """book[position() <= 3]""", // The first three books (1, 2, 3).
+    """author[not(last-name = "Bob")]""", // All <author> elements that do no contain <last-name> child elements with the value Bob.
+    """author[first-name = "Bob"]""", // All <author> elements that have at least one <first-name> child with the value Bob.
+    """author[* = "Bob"]""", // all author elements containing any child element whose value is Bob.
+    """author[last-name = "Bob" and first-name = "Joe"]""", // All <author> elements that has a <last-name> child element with the value Bob and a <first-name> child element with the value Joe.
+    """price[@intl = "Canada"]""", // All <price> elements in the context node which have an intl attribute equal to "Canada".
+    """degree[position() < 3]""", // The first two <degree> elements that are children of the context node.
+    """p/text()[2]""", // The second text node in each <p> element in the context node.
+    """ancestor::book[1]""", // The nearest <book> ancestor of the context node.
+    """ancestor::book[author][1]""", // The nearest <book> ancestor of the context node and this <book> element has an <author> element as its child.
+    """ancestor::author[parent::book][1]""" // The nearest <author> ancestor in the current context and this <author> element is a child of a <book> element.
   )
 }
 
@@ -41,20 +76,19 @@ class ParserSpec extends FunSpec with ShouldMatchers {
   val parser = new XPathParsers
 
   def beSuccessful[T](s: String) = new Matcher[parser.ParseResult[T]] {
-      def apply(r: parser.ParseResult[T]) =
-        MatchResult(
-          r.successful,
-          s"""Parse result of "$s" was not successful: $r""",
-          s"""Parse result of "$s" was successful: $r"""
-        )
-    }
+    def apply(r: parser.ParseResult[T]) =
+      MatchResult(
+        r.successful,
+        s"""Parse result of "$s" was not successful: $r""",
+        s"""Parse result of "$s" was successful: $r"""
+      )
+  }
 
   describe("A Parser") {
-  
     for (example <- XPathExamples.examples) {
-      it(s"""should parse $example""") {
+      it( s"""should parse $example""") {
         parser(example) should beSuccessful(example)
       }
-	}
+    }
   }
 }
