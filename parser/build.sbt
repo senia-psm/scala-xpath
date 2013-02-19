@@ -4,6 +4,8 @@ version := "0.0.1"
 
 scalaVersion := "2.10.0"
 
+parallelExecution in Test := false
+
 scalacOptions += "-deprecation"
 
 resolvers += "Scala Tools Snapshots" at "http://scala-tools.org/repo-snapshots/"

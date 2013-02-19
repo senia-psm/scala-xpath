@@ -5,16 +5,15 @@ package senia.scala_xpath.parser
  * Licensed under the GPLv3.
  * See the LICENSE file for details.
  */
-
 import org.scalatest.FunSpec
 import scala.language.implicitConversions
 import org.scalatest.matchers.{ShouldMatchers, MatchResult, Matcher}
 
-class ParserSpec extends FunSpec with ShouldMatchers {
-  val parser = new XPathParsers
+class MixedParserSpec extends FunSpec with ShouldMatchers {
+  val mixedParser = new MixedXPathParsers[Nothing]
 
-  def beSuccessful[T](s: String) = new Matcher[parser.ParseResult[T]] {
-    def apply(r: parser.ParseResult[T]) =
+  def beSuccessful2[T](s: String) = new Matcher[mixedParser.ParseResult[T]] {
+    def apply(r: mixedParser.ParseResult[T]) =
       MatchResult(
         r.successful,
         s"""Parse result of "$s" was not successful: $r""",
@@ -22,14 +21,11 @@ class ParserSpec extends FunSpec with ShouldMatchers {
       )
   }
 
-  describe("A Parser") {
+  describe("A Mixed Parser") {
     for (example <- XPathExamples.examples) {
       it( s"""should parse $example""") {
-        parser(example) should beSuccessful(example)
+        mixedParser(example) should beSuccessful2(example)
       }
     }
   }
 }
-
-
-
