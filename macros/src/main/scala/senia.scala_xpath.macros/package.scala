@@ -200,6 +200,11 @@ object `package` {
       }
       import L._
 
+      var varN = 0
+      def nextVarName: String = {
+        varN += 1
+        "var" + varN
+      }
 
       def locationPath: EParser[LocationPath] = absoluteLocationPath | relativeLocationPath
       def slash: Parser[String] = ws ~> "/" <~ ws
@@ -246,12 +251,12 @@ object `package` {
       def predicateExpr: EParser[PredicateExpr] = expr ^^ { e => reify{PredicateExpr(e.splice)} }
       def expr: EParser[Expr] = orExpr ^^ { e => reify{ Expr(e.splice) } }
       def primaryExpr: EParser[PrimaryExpr] =
-        accept("Right[c.Expr[Any]]", { case Right(e) => reify{ LiteralExpr(Literal(e.splice.toString)) } }) |
-          variableReference ^^ { case VariableReference(n) => reify{ VariableExpr(VariableReference(L.literal(n).splice)) } } |
-          `(` ~> expr <~ `)` ^^ { r => reify{GroupedExpr(r.splice)} } |
-          functionCall ^^ { f => reify{ FunctionCallExpr(f.splice) } } |
-          number ^^ { case Number(i, wd, f) => reify{ NumberExpr(Number(L.literal(i).splice, c.literal(wd).splice, L.literal(f).splice)) } } |
-          literal ^^ { case l => reify{LiteralExpr(L.literal(l).splice)} }
+        accept("Right[c.Expr[Any]]", { case Right(e) => reify{ CustomVariableExpr(VariableReference(QName(None, NCName(c.literal(nextVarName).splice))), e.splice) } }) |
+        variableReference ^^ { case VariableReference(n) => reify{ VariableExpr(VariableReference(L.literal(n).splice)) } } |
+        `(` ~> expr <~ `)` ^^ { r => reify{GroupedExpr(r.splice)} } |
+        functionCall ^^ { f => reify{ FunctionCallExpr(f.splice) } } |
+        number ^^ { case Number(i, wd, f) => reify{ NumberExpr(Number(L.literal(i).splice, c.literal(wd).splice, L.literal(f).splice)) } } |
+        literal ^^ { case l => reify{LiteralExpr(L.literal(l).splice)} }
       def functionCall: EParser[FunctionCall] = functionName ~ `(` ~ repsep(argument, `,`) <~ `)` ^^ {
         case fn ~ _ ~ ags => reify{ FunctionCall(L.literal(fn).splice, L.seqExprToExprSeq(ags).splice) }
       }
