@@ -10,6 +10,6 @@ scalacOptions += "-deprecation"
 
 resolvers += "Scala Tools Snapshots" at "http://scala-tools.org/repo-snapshots/"
 
-libraryDependencies += "org.scalatest" %% "scalatest" % "[1.7.2,)" % "test"
+libraryDependencies += "org.scalatest" % "scalatest_2.10" % "1.9.1" % "test"
 
 libraryDependencies += "org.scalaz" %% "scalaz-core" % "6.0.4"
