@@ -40,7 +40,7 @@ case class StepCommon(as: AxisSpecifier, nt: NodeTest, ps: Seq[Predicate]) exten
   override def toString = "" + as + nt + ps.mkString
   def variables: Map[QName, Any] = ps.flatMap{ _.variables }(collection.breakOut)
 }
-/* [12]       AbbreviatedStep       ::=       '.'    
+/* [12]       AbbreviatedStep       ::=       '.'
             | '..' */
 sealed abstract class AbbreviatedStep extends Step
 case object SelfStep extends AbbreviatedStep {
@@ -136,7 +136,7 @@ case class Argument(e: Expr) { override def toString = e.toString }
 
 /* [18]       UnionExpr       ::=       PathExpr    
             | UnionExpr '|' PathExpr    */
-case class UnionExpr(ps: Seq[PathExpr]) { // TODO: NEL 
+case class UnionExpr(ps: Seq[PathExpr]) { // TODO: NEL
   require(ps.nonEmpty, "At least 1 PathExpr")
   override def toString = ps.mkString(" | ")
   def variables: Map[QName, Any] = ps.flatMap{ _.variables }(collection.breakOut)
@@ -229,7 +229,7 @@ sealed abstract class MultiplicativeOperator(s: String) extends Operator { overr
 case object MultiplyOperator extends MultiplicativeOperator("*")
 case object Div extends MultiplicativeOperator("div") with OperatorName
 case object Mod extends MultiplicativeOperator("mod") with OperatorName
-            
+
 /* [27]       UnaryExpr       ::=       UnionExpr    
             | '-' UnaryExpr */
 case class UnaryExpr(union: UnionExpr, minuses: Seq[Subtraction.type] = Nil) {
@@ -372,7 +372,7 @@ object QName {
 
 /* [4]       NCName       ::=       Name - (Char* ':' Char*)    ( An XML Name, minus the ":" ) */
 case class NCName(s: String) {
-  require(NCName.isValid(s), "Valid NCName")
+  require(NCName.isValid(s), s"Valid NCName, found: '$s'")
   override def toString = s
 }
 object NCName {
