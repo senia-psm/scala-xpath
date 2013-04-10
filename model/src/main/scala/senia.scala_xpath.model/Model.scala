@@ -123,7 +123,15 @@ case class Expr(e: OrExpr) {
             | FunctionCall */
 sealed abstract class PrimaryExpr
 case class VariableExpr(vr: VariableReference) extends PrimaryExpr { override def toString = vr.toString }
-case class CustomVariableExpr(vr: VariableReference, value: Any) extends PrimaryExpr { override def toString = vr.toString }
+sealed abstract class CustomVariableExpr[T] extends PrimaryExpr {
+  def vr: VariableReference
+  def value: T
+  override def toString = vr.toString
+  def asValue: Any
+}
+object CustomVariableExpr { def unapply(e: CustomVariableExpr[_]): Option[(VariableReference, Any)] = Some(e.vr -> e.asValue) }
+case class CustomIntVariableExpr(vr: VariableReference, value: BigInt) extends CustomVariableExpr[BigInt] { val asValue = value.toString() }
+case class CustomStringVariableExpr(vr: VariableReference, value: String) extends CustomVariableExpr[String] { val asValue = value }
 case class GroupedExpr(e: Expr) extends PrimaryExpr { override def toString = s"($e)" }
 case class LiteralExpr(l: Literal) extends PrimaryExpr { override def toString = l.toString }
 case class NumberExpr(n: Number) extends PrimaryExpr { override def toString = n.toString }

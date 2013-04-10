@@ -3,7 +3,6 @@ package senia.scala_xpath.macros
 import scala.language.experimental.macros
 import senia.scala_xpath.model.LocationPath
 import reflect.macros.Context
-import senia.scala_xpath.parser.XPathParsers
 
 /**
  * Copyright (c) 2013. Semjon Popugaev (senia).
@@ -21,7 +20,7 @@ object StaticContext {
 
     val Apply(_, List(Apply(_, List(Literal(Constant(source: String)))))) = c.prefix.tree
 
-    val parser = new XPathParsers
+    val parser = new senia.scala_xpath.parser.XPathParsers
     val result = parser(source).get
     c.Expr[LocationPath](Literal(Constant(result)))
   }
