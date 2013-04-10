@@ -36,8 +36,10 @@ object `package` {
     factory.newXPath().compile(p.toString)
   }
 
-  implicit class NodeListToSeq(val l: NodeList) extends AnyVal {
-    def toSeq: Seq[org.w3c.dom.Node] = (0 until l.getLength).map{ l.item  }
+  implicit class NodeListIndexedSeq(nl: NodeList) extends IndexedSeq[org.w3c.dom.Node] {
+    val length = nl.getLength()
+    def apply(idx: Int) = nl.item(idx)
+    override val hasDefiniteSize = true
   }
 
   implicit class W3CNodeXPathHelper(val node: org.w3c.dom.Node) extends AnyVal {
@@ -81,7 +83,7 @@ object `package` {
           evaluate(nodeToDocument(n), XPathConstants.NODESET).
           asInstanceOf[NodeList]
 
-        nodeList.toSeq.map{ asXml }(breakOut)
+        nodeList.map{ asXml }(breakOut)
       }
 
       ns match {
