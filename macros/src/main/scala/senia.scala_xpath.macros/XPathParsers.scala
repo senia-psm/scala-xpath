@@ -35,6 +35,12 @@ trait XPathParsers extends EitherParsers {
     "var" + varN
   }
 
+  var funN = 0
+  def nextFunName: String = {
+    funN += 1
+    "scalafun" + funN
+  }
+
   def locationPath: EParser[LocationPath] = absoluteLocationPath | relativeLocationPath
   def slash: Parser[String] = ws ~> "/" <~ ws
   def dblSlash: Parser[String] = ws ~> "//" <~ ws
@@ -85,24 +91,52 @@ trait XPathParsers extends EitherParsers {
   def confirmType(e: xc.Expr[_], t: xc.Type): Boolean = (e.actualType weak_<:< t) || (xc.inferImplicitView(e.tree, e.actualType, t) != xc.universe.EmptyTree)
 
   def primaryExpr: EParser[PrimaryExpr] =
+    customFunctionCall |
     accept("xc.Expr[Any]", { case Right(e) => e } ) ^? ({
         case e: xc.Expr[BigInt] if confirmType(e, tagOfBigInt.tpe) => reify{ CustomIntVariableExpr(VariableReference(QName(None, NCName(xc.literal(nextVarName).splice))), e.splice) }
+        case e: xc.Expr[Double] if confirmType(e, xc.universe.definitions.DoubleClass.toType) => reify{ CustomDoubleVariableExpr(VariableReference(QName(None, NCName(xc.literal(nextVarName).splice))), e.splice) }
         case e: xc.Expr[String] if confirmType(e, xc.universe.definitions.StringClass.toType) => reify{ CustomStringVariableExpr(VariableReference(QName(None, NCName(xc.literal(nextVarName).splice))), e.splice) }
       },
-      e => s"Int, Long, BigInt or String expression expected, $e found."
+      e => s"Int, Long, BigInt, Double or String expression expected, $e found."
       ) |
-    variableReference ^^ { case VariableReference(n) => reify{ VariableExpr(VariableReference(lts.literal(n).splice)) } } |
+    variableReference ^^ lts.literal |
     `(` ~> expr <~ `)` ^^ { r => reify{GroupedExpr(r.splice)} } |
-    functionCall ^^ { f => reify{ FunctionCallExpr(f.splice) } } |
-    number ^^ { case Number(i, wd, f) => reify{ NumberExpr(Number(lts.literal(i).splice, xc.literal(wd).splice, lts.literal(f).splice)) } } |
-    literal ^^ { case l => reify{LiteralExpr(lts.literal(l).splice)} }
+    functionCall |
+    number ^^ lts.literal |
+    literal ^^ lts.literal
   def functionCall: EParser[FunctionCall] = functionName ~ `(` ~ repsep(argument, `,`) <~ `)` ^^ {
-    case fn ~ _ ~ ags => reify{ FunctionCall(lts.literal(fn).splice, lts.seqExprToExprSeq(ags).splice) }
+    case fn ~ _ ~ args => reify{ FunctionCall(lts.literal(fn).splice, lts.seqExprToExprSeq(args).splice) }
+  }
+
+  def customFunctionCall: EParser[CustomFunctionCall] = accept("xc.Expr[Any]", { case Right(e) => e } ) ~ `(` ~ repsep(argument, `,`) <~ `)` ^^ {
+    case (e: xc.Expr[() => Any]) ~ _ ~ args if args.length == 0 => reify{ CustomFunctionCall(CustomFunction.apply0(QName(Some(NCName("scalafun")), NCName(xc.literal(nextFunName).splice)), e.splice), lts.seqExprToExprSeq(args).splice) }
+    case (e: xc.Expr[(Any) => Any]) ~ _ ~ args if args.length == 1 => reify{ CustomFunctionCall(CustomFunction.apply1(QName(Some(NCName("scalafun")), NCName(xc.literal(nextFunName).splice)), e.splice), lts.seqExprToExprSeq(args).splice) }
+    case (e: xc.Expr[(Any, Any) => Any]) ~ _ ~ args if args.length == 2 => reify{ CustomFunctionCall(CustomFunction.apply2(QName(Some(NCName("scalafun")), NCName(xc.literal(nextFunName).splice)), e.splice), lts.seqExprToExprSeq(args).splice) }
+    case (e: xc.Expr[(Any, Any, Any) => Any]) ~ _ ~ args if args.length == 3 => reify{ CustomFunctionCall(CustomFunction.apply3(QName(Some(NCName("scalafun")), NCName(xc.literal(nextFunName).splice)), e.splice), lts.seqExprToExprSeq(args).splice) }
+    case (e: xc.Expr[(Any, Any, Any, Any) => Any]) ~ _ ~ args if args.length == 4 => reify{ CustomFunctionCall(CustomFunction.apply4(QName(Some(NCName("scalafun")), NCName(xc.literal(nextFunName).splice)), e.splice), lts.seqExprToExprSeq(args).splice) }
+    case (e: xc.Expr[(Any, Any, Any, Any, Any) => Any]) ~ _ ~ args if args.length == 5 => reify{ CustomFunctionCall(CustomFunction.apply5(QName(Some(NCName("scalafun")), NCName(xc.literal(nextFunName).splice)), e.splice), lts.seqExprToExprSeq(args).splice) }
+    case (e: xc.Expr[(Any, Any, Any, Any, Any, Any) => Any]) ~ _ ~ args if args.length == 6 => reify{ CustomFunctionCall(CustomFunction.apply6(QName(Some(NCName("scalafun")), NCName(xc.literal(nextFunName).splice)), e.splice), lts.seqExprToExprSeq(args).splice) }
+    case (e: xc.Expr[(Any, Any, Any, Any, Any, Any, Any) => Any]) ~ _ ~ args if args.length == 7 => reify{ CustomFunctionCall(CustomFunction.apply7(QName(Some(NCName("scalafun")), NCName(xc.literal(nextFunName).splice)), e.splice), lts.seqExprToExprSeq(args).splice) }
+    case (e: xc.Expr[(Any, Any, Any, Any, Any, Any, Any, Any) => Any]) ~ _ ~ args if args.length == 8 => reify{ CustomFunctionCall(CustomFunction.apply8(QName(Some(NCName("scalafun")), NCName(xc.literal(nextFunName).splice)), e.splice), lts.seqExprToExprSeq(args).splice) }
+    case (e: xc.Expr[(Any, Any, Any, Any, Any, Any, Any, Any, Any) => Any]) ~ _ ~ args if args.length == 9 => reify{ CustomFunctionCall(CustomFunction.apply9(QName(Some(NCName("scalafun")), NCName(xc.literal(nextFunName).splice)), e.splice), lts.seqExprToExprSeq(args).splice) }
+    case (e: xc.Expr[(Any, Any, Any, Any, Any, Any, Any, Any, Any, Any) => Any]) ~ _ ~ args if args.length == 10 => reify{ CustomFunctionCall(CustomFunction.apply10(QName(Some(NCName("scalafun")), NCName(xc.literal(nextFunName).splice)), e.splice), lts.seqExprToExprSeq(args).splice) }
+    case (e: xc.Expr[(Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any) => Any]) ~ _ ~ args if args.length == 11 => reify{ CustomFunctionCall(CustomFunction.apply11(QName(Some(NCName("scalafun")), NCName(xc.literal(nextFunName).splice)), e.splice), lts.seqExprToExprSeq(args).splice) }
+    case (e: xc.Expr[(Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any) => Any]) ~ _ ~ args if args.length == 12 => reify{ CustomFunctionCall(CustomFunction.apply12(QName(Some(NCName("scalafun")), NCName(xc.literal(nextFunName).splice)), e.splice), lts.seqExprToExprSeq(args).splice) }
+    case (e: xc.Expr[(Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any) => Any]) ~ _ ~ args if args.length == 13 => reify{ CustomFunctionCall(CustomFunction.apply13(QName(Some(NCName("scalafun")), NCName(xc.literal(nextFunName).splice)), e.splice), lts.seqExprToExprSeq(args).splice) }
+    case (e: xc.Expr[(Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any) => Any]) ~ _ ~ args if args.length == 14 => reify{ CustomFunctionCall(CustomFunction.apply14(QName(Some(NCName("scalafun")), NCName(xc.literal(nextFunName).splice)), e.splice), lts.seqExprToExprSeq(args).splice) }
+    case (e: xc.Expr[(Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any) => Any]) ~ _ ~ args if args.length == 15 => reify{ CustomFunctionCall(CustomFunction.apply15(QName(Some(NCName("scalafun")), NCName(xc.literal(nextFunName).splice)), e.splice), lts.seqExprToExprSeq(args).splice) }
+    case (e: xc.Expr[(Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any) => Any]) ~ _ ~ args if args.length == 16 => reify{ CustomFunctionCall(CustomFunction.apply16(QName(Some(NCName("scalafun")), NCName(xc.literal(nextFunName).splice)), e.splice), lts.seqExprToExprSeq(args).splice) }
+    case (e: xc.Expr[(Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any) => Any]) ~ _ ~ args if args.length == 17 => reify{ CustomFunctionCall(CustomFunction.apply17(QName(Some(NCName("scalafun")), NCName(xc.literal(nextFunName).splice)), e.splice), lts.seqExprToExprSeq(args).splice) }
+    case (e: xc.Expr[(Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any) => Any]) ~ _ ~ args if args.length == 18 => reify{ CustomFunctionCall(CustomFunction.apply18(QName(Some(NCName("scalafun")), NCName(xc.literal(nextFunName).splice)), e.splice), lts.seqExprToExprSeq(args).splice) }
+    case (e: xc.Expr[(Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any) => Any]) ~ _ ~ args if args.length == 19 => reify{ CustomFunctionCall(CustomFunction.apply19(QName(Some(NCName("scalafun")), NCName(xc.literal(nextFunName).splice)), e.splice), lts.seqExprToExprSeq(args).splice) }
+    case (e: xc.Expr[(Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any) => Any]) ~ _ ~ args if args.length == 20 => reify{ CustomFunctionCall(CustomFunction.apply20(QName(Some(NCName("scalafun")), NCName(xc.literal(nextFunName).splice)), e.splice), lts.seqExprToExprSeq(args).splice) }
+    case (e: xc.Expr[(Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any) => Any]) ~ _ ~ args if args.length == 21 => reify{ CustomFunctionCall(CustomFunction.apply21(QName(Some(NCName("scalafun")), NCName(xc.literal(nextFunName).splice)), e.splice), lts.seqExprToExprSeq(args).splice) }
+    case (e: xc.Expr[(Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any, Any) => Any]) ~ _ ~ args if args.length == 22 => reify{ CustomFunctionCall(CustomFunction.apply22(QName(Some(NCName("scalafun")), NCName(xc.literal(nextFunName).splice)), e.splice), lts.seqExprToExprSeq(args).splice) }
   }
   def argument: EParser[Argument] = expr ^^ { e => reify{ Argument(e.splice) } }
   def unionExpr: EParser[UnionExpr] = rep1sep(pathExpr, ws ~> '|' <~ ws) ^^ { es => reify{UnionExpr(lts.seqExprToExprSeq(es).splice)} }
   def pathExpr: EParser[PathExpr] =
-    locationPath ^^ { lp => reify{LocationPathExpr(lp.splice)} } |||
+    locationPath |||
       filterExpr ~ opt(( dblSlash | slash ) ~ relativeLocationPath) ^^ {
         case f ~ None => reify{FilterPathExpr(f.splice)}
         case f ~ Some(s ~ rp) => reify{FilterPathExpr(f.splice, Some(rp.splice), xc.literal(s).splice == "//")}

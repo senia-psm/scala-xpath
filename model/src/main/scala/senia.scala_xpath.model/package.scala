@@ -7,20 +7,27 @@ package senia.scala_xpath.model
  */
 
 import collection.breakOut
-import javax.xml.xpath.{XPathExpression, XPathConstants, XPathFactory, XPathVariableResolver}
+import javax.xml.xpath._
 import xml.NodeSeq
-import javax.xml.namespace.{QName => JQNamr}
+import javax.xml.namespace.{QName => JQNamr, NamespaceContext}
 import org.w3c.dom.{NodeList, Document}
 import javax.xml.parsers.DocumentBuilderFactory
 import java.io.StringReader
 import org.xml.sax.InputSource
 import com.sun.org.apache.xalan.internal.xsltc.trax.DOM2SAX
 import scala.xml.parsing.NoBindingFactoryAdapter
+import scala.Some
+import javax.xml.XMLConstants
+import java.util
+import com.sun.org.apache.xpath.internal.jaxp.XPathFactoryImpl
 
 object `package` {
   private def locationPathToExpression(p: LocationPath): XPathExpression = {
-    val factory = XPathFactory.newInstance()
-    factory.setXPathVariableResolver(
+    val old = java.lang.System.getSecurityManager
+    java.lang.System.setSecurityManager(null)
+    val xpath = XPathFactory.newInstance().newXPath()
+    java.lang.System.setSecurityManager(old)
+    xpath.setXPathVariableResolver(
       new XPathVariableResolver {
         def resolveVariable(variableName: JQNamr): AnyRef = {
           if (variableName == null)
@@ -33,7 +40,36 @@ object `package` {
             map{_.asInstanceOf[AnyRef]}.
             getOrElse(null)
         }})
-    factory.newXPath().compile(p.toString)
+    val oldNamespaceContext = xpath.getNamespaceContext
+    xpath.setNamespaceContext(new NamespaceContext{
+      def getNamespaceURI(prefix: String): String =
+        if (prefix == "scalafun") """scala:xpath""" else oldNamespaceContext.getNamespaceURI(prefix)
+
+      def getPrefix(namespaceURI: String): String =
+        if (namespaceURI == """scala:xpath""") "scalafun" else oldNamespaceContext.getPrefix(namespaceURI)
+
+      import collection.JavaConverters._
+      def getPrefixes(namespaceURI: String): util.Iterator[_] =
+        if (namespaceURI == """scala:xpath""") Seq("scalafun").iterator.asJava else oldNamespaceContext.getPrefixes(namespaceURI)
+
+    })
+    xpath.setXPathFunctionResolver(
+      new XPathFunctionResolver{
+        def resolveFunction(functionName: JQNamr, arity: Int): XPathFunction = {
+          val prefix = if (functionName.getPrefix.nonEmpty) Some(NCName(functionName.getPrefix)) else None
+          val prefixByUrl = if (functionName.getNamespaceURI == """scala:xpath""") Some(NCName("scalafun")) else None
+          val name = QName(prefix orElse prefixByUrl, NCName(functionName.getLocalPart))
+
+          import collection.JavaConverters._
+          p.functions.get(name -> arity).map{ f =>
+            new XPathFunction{
+              def evaluate(args: java.util.List[_]): Object = f(args.asScala.toList).asInstanceOf[Object]
+            }
+          }.getOrElse(null)
+        }
+      }
+    )
+    xpath.compile(p.toString)
   }
 
   implicit class NodeListIndexedSeq(nl: NodeList) extends IndexedSeq[org.w3c.dom.Node] {

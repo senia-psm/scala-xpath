@@ -107,6 +107,10 @@ trait Literals {
     case ParentStep => reify{ ParentStep }
   }
 
+  def literal(r: VariableReference): lc.Expr[VariableReference] = reify{ VariableReference(literal(r.n).splice) }
+
+  def literal(n: Number): lc.Expr[Number] = reify{ Number(literal(n.integral).splice, lc.literal(n.withDot).splice, literal(n.fractional).splice) }
+
   def seqExprToExprSeq[T](es: Seq[lc.Expr[T]]): lc.Expr[Seq[T]] = {
     @annotation.tailrec def loop(in: List[lc.Expr[T]], subRes: lc.Expr[List[T]] = reify{ Nil } ): lc.Expr[List[T]] =
       in match {

@@ -41,11 +41,11 @@ class XPathParsers extends JavaTokenParsers {
   def predicate: Parser[Predicate] = `[` ~> predicateExpr <~ `]` ^^ { Predicate }
   def predicateExpr: Parser[PredicateExpr] = expr ^^ { PredicateExpr }
   def expr: Parser[Expr] = orExpr ^^ { Expr }
-  def primaryExpr: Parser[PrimaryExpr] = variableReference ^^ { VariableExpr } | `(` ~> expr <~ `)` ^^ { GroupedExpr } | functionCall ^^ { FunctionCallExpr } | number ^^ { NumberExpr } | literal ^^ { LiteralExpr }
+  def primaryExpr: Parser[PrimaryExpr] = variableReference | `(` ~> expr <~ `)` ^^ { GroupedExpr } | functionCall | number | literal
   def functionCall: Parser[FunctionCall] = functionName ~ `(` ~ repsep(argument, `,`) <~ `)` ^^ { case fn ~ _ ~ as => FunctionCall(fn, as) }
   def argument: Parser[Argument] = expr ^^ { Argument }
   def unionExpr: Parser[UnionExpr] = rep1sep(pathExpr, ws ~> '|' <~ ws) ^^ { UnionExpr }
-  def pathExpr: Parser[PathExpr] = locationPath ^^ { LocationPathExpr } ||| filterExpr ~ opt(( dblSlash | slash ) ~ relativeLocationPath) ^^ {
+  def pathExpr: Parser[PathExpr] = locationPath ||| filterExpr ~ opt(( dblSlash | slash ) ~ relativeLocationPath) ^^ {
       case f ~ None => FilterPathExpr(f)
       case f ~ Some(s ~ rp) => FilterPathExpr(f, Some(rp), s == "//")
     }

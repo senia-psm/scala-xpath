@@ -2,7 +2,9 @@ name := "scala-xpath-model"
 
 version := "0.0.1"
 
-scalaVersion := "2.10.0"
+scalaVersion := "2.10.1"
+
+sbtVersion := "0.13-SNAPSHOT"
 
 scalacOptions += "-deprecation"
 
