@@ -9,6 +9,7 @@ package senia.scala_xpath.macros
 import scala.language.experimental.macros
 import reflect.macros.Context
 import senia.scala_xpath.model._
+import senia.scala_xpath.parser.EitherParsers
 import scala.language.implicitConversions
 import scala.util.parsing.combinator.Parsers
 import util.matching.Regex
