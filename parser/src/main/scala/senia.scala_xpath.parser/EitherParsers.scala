@@ -1,4 +1,4 @@
-package senia.scala_xpath.macros
+package senia.scala_xpath.parser
 
 /**
  * Copyright (c) 2013. Semjon Popugaev (senia).
