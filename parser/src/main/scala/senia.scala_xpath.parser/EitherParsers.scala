@@ -6,7 +6,6 @@ package senia.scala_xpath.macros
  * See the LICENSE file for details.
  */
 
-import scala.language.experimental.macros
 import scala.language.implicitConversions
 import scala.util.parsing.combinator.Parsers
 import util.matching.Regex
